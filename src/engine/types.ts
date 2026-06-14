@@ -35,6 +35,12 @@ export interface TimedQuestion extends Question {
   /** 0-based position within the video — unique and stable, ideal for render keys. */
   index: number;
   timing: QuestionTiming;
+  /** Spoken lines: the question (over the countdown) and the answer (at the reveal). Set by the engine. */
+  narration?: { question: string; answer: string };
+  /** public/-relative path to the question-narration audio. Set by the TTS step. */
+  questionAudioSrc?: string;
+  /** public/-relative path to the answer-narration audio. Set by the TTS step. */
+  answerAudioSrc?: string;
 }
 
 /** A non-question screen, such as the intro or outro. */
@@ -42,6 +48,10 @@ export interface Card {
   title: string;
   subtitle: string;
   durationSeconds: number;
+  /** Spoken line for this card. Set by the engine. */
+  narration?: string;
+  /** public/-relative path to the synthesized audio. Set by the TTS step. */
+  audioSrc?: string;
 }
 
 export interface VideoSpec {

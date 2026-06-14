@@ -16,21 +16,28 @@ import { buildMetadata } from './engine/metadata';
 import { OUT_DIR, bundleProject, renderThumbnail, renderVideo } from './pipeline/render';
 import { specFromArg } from './pipeline/specFromArg';
 import { videoForDate } from './schedule';
+import { prepareNarration } from './tts/prepare';
 import { type Visibility, uploadVideo } from './youtube/upload';
 
 const argv = process.argv.slice(2);
 const dryRun = argv.includes('--dry-run');
+const silent = argv.includes('--silent') || process.env.VOICE === 'off';
 const visibility = (flag(argv, '--visibility') ?? 'private') as Visibility;
 const dateFlag = flag(argv, '--date');
 const positional = argv.find((a) => !a.startsWith('--'));
 
 // A positional table arg overrides the schedule; otherwise use the calendar.
-const spec = positional
+let spec = positional
   ? specFromArg(positional)
   : videoForDate(dateFlag ? new Date(dateFlag) : new Date()).spec;
 
 console.log(`▶ Producing "${spec.title}"`);
 console.log(`  visibility=${visibility}${dryRun ? '  (DRY RUN — no upload)' : ''}\n`);
+
+// Synthesize narration BEFORE bundling — the bundler snapshots public/ at bundle time.
+if (!silent) {
+  spec = await prepareNarration(spec);
+}
 
 const serveUrl = await bundleProject();
 

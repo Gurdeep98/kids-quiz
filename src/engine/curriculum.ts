@@ -7,6 +7,7 @@
 import type { Card, Question, ThemeName, TimedQuestion, VideoSpec } from './types';
 import { createRng } from './random';
 import { generateMixedTimesTables, generateTimesTable } from './generators';
+import { introNarration, outroNarration, spokenAnswer, spokenPrompt } from './narration';
 
 export interface VideoBuildOptions {
   /** Frames per second. Default 30. */
@@ -42,23 +43,32 @@ interface AssembleArgs {
   seed: number;
   questions: Question[];
   opts: VideoBuildOptions;
+  /** Spoken intro line; defaults to the generic quiz line. */
+  introLine?: string;
 }
 
-/** Shared assembly: timing + cards + duration math. The one place runtime is computed. */
-function assemble({ id, topic, title, seed, questions, opts }: AssembleArgs): VideoSpec {
+/** Shared assembly: timing + cards + narration + duration math. The one place runtime is computed. */
+function assemble({ id, topic, title, seed, questions, opts, introLine }: AssembleArgs): VideoSpec {
   const o = { ...DEFAULTS, ...stripUndefined(opts) };
 
   const timed: TimedQuestion[] = questions.map((q, index) => ({
     ...q,
     index,
     timing: { countdownSeconds: o.countdownSeconds, revealSeconds: o.revealSeconds },
+    narration: { question: spokenPrompt(q), answer: spokenAnswer(q) },
   }));
 
-  const intro: Card = { title, subtitle: 'Get ready… ⏱️', durationSeconds: o.introSeconds };
+  const intro: Card = {
+    title,
+    subtitle: 'Get ready… ⏱️',
+    durationSeconds: o.introSeconds,
+    narration: introLine ?? introNarration(),
+  };
   const outro: Card = {
     title: 'Well done! 🌟',
     subtitle: 'Subscribe for a new quiz every day!',
     durationSeconds: o.outroSeconds,
+    narration: outroNarration(),
   };
 
   const questionsSeconds = timed.reduce(
@@ -112,6 +122,7 @@ export function buildTimesTableVideo(table: number, opts: TimesTableVideoOptions
     seed,
     questions,
     opts,
+    introLine: introNarration(table),
   });
 }
 

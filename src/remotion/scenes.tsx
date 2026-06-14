@@ -3,8 +3,11 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Audio,
+  Sequence,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -27,6 +30,7 @@ export const IntroCard: React.FC<{ card: Card; palette: Palette }> = ({ card, pa
         fontFamily: FONT_FAMILY,
       }}
     >
+      {card.audioSrc && <Audio src={staticFile(card.audioSrc)} />}
       <div style={{ transform: `scale(${scale})` }}>
         <div style={{ fontSize: 96, fontWeight: 900, color: palette.text, lineHeight: 1.08 }}>
           {card.title}
@@ -81,6 +85,14 @@ export const QuestionScene: React.FC<{
         color: palette.text,
       }}
     >
+      {/* Voice reads the question over the countdown, then the answer at the reveal. */}
+      {question.questionAudioSrc && <Audio src={staticFile(question.questionAudioSrc)} />}
+      {question.answerAudioSrc && (
+        <Sequence from={countdownFrames}>
+          <Audio src={staticFile(question.answerAudioSrc)} />
+        </Sequence>
+      )}
+
       <div style={{ position: 'absolute', top: 110, fontSize: 46, fontWeight: 800, opacity: 0.65 }}>
         {`Question ${index + 1} / ${total}`}
       </div>
@@ -147,6 +159,7 @@ export const OutroCard: React.FC<{ card: Card; palette: Palette }> = ({ card, pa
         fontFamily: FONT_FAMILY,
       }}
     >
+      {card.audioSrc && <Audio src={staticFile(card.audioSrc)} />}
       <div style={{ transform: `scale(${scale})` }}>
         <div style={{ fontSize: 130, fontWeight: 900, color: palette.text }}>{card.title}</div>
         <div style={{ fontSize: 58, marginTop: 48, fontWeight: 800, color: palette.accent }}>

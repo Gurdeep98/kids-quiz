@@ -12,6 +12,16 @@ describe('buildTimesTableVideo', () => {
     expect(spec.ageRange).toEqual([7, 9]);
   });
 
+  it('populates narration text on cards and questions', () => {
+    const spec = buildTimesTableVideo(3);
+    expect(spec.intro.narration).toBe("Let's practise the 3 times table. Get ready!");
+    expect(spec.outro.narration).toContain('Subscribe');
+    expect(spec.questions[0]!.narration).toEqual({ question: 'What is 3 times 1?', answer: '3' });
+    // audio paths are not set by the engine — that's the TTS step's job
+    expect(spec.intro.audioSrc).toBeUndefined();
+    expect(spec.questions[0]!.questionAudioSrc).toBeUndefined();
+  });
+
   it('assigns sequential indices and per-question timing', () => {
     const spec = buildTimesTableVideo(4);
     spec.questions.forEach((q, i) => {
