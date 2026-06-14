@@ -2,8 +2,9 @@
 
 A faceless YouTube channel pipeline that produces **memory-math** videos for
 primary-school kids — "beat the clock" times-table drills and speed quizzes,
-no camera and no voiceover, just clean visuals — and publishes them on a
-schedule with no human in the loop.
+no camera, with clear child-friendly **voiceover** (the question read over the
+countdown, the answer at the reveal) — and publishes them on a schedule with no
+human in the loop.
 
 The pipeline is built in independently-testable layers:
 
@@ -11,6 +12,7 @@ The pipeline is built in independently-testable layers:
 | --- | --- | --- |
 | **1. Question engine** | ✅ | Generates the curriculum + each video's questions, answers and timing. Pure logic, fully unit-tested. |
 | **2. Video renderer** | ✅ | Turns a `VideoSpec` into a vertical (Shorts) MP4 — question reveal, countdown ring, answer. (Remotion) |
+| **2b. Voiceover** | ✅ | Google Cloud TTS reads each question + answer; clips are content-hash cached. Silent if no key. |
 | **3. Thumbnail + metadata** | ✅ | Auto-generates a 1280×720 thumbnail + title/description/tags, kept within YouTube's limits. |
 | **4. Upload / scheduling** | ✅ | A date-driven content calendar + YouTube Data API uploader, runnable daily on GitHub Actions. |
 
@@ -21,11 +23,12 @@ and the day's video is decided by the date alone (the publishing job is stateles
 
 ```bash
 npm install
-npm test                 # 39 unit tests (engine, metadata, schedule)
+npm test                 # 49 unit tests (engine, metadata, schedule, narration, tts)
 npm run typecheck
 
 npm run studio           # live preview / scrub in the browser
 npm run render -- 7      # render the 7× table → out/times-table-7.mp4
+npm run render -- 7 --silent   # render without voiceover
 npm run thumbnail -- 7   # thumbnail PNG + metadata.json
 npm run preview:spec     # print a VideoSpec
 npm run preview:meta     # print the upload metadata
@@ -34,6 +37,7 @@ npm run produce -- --dry-run     # render today's scheduled video, skip upload
 npm run produce                  # render + upload today's video (private)
 npm run produce -- --date=2026-03-01 --visibility=unlisted
 npm run produce -- 7             # force a specific table (ignores the schedule)
+npm run produce -- --silent      # skip narration for this run
 ```
 
 ## Going live on YouTube (one-time setup)
@@ -54,6 +58,20 @@ Steps:
 5. `npm run auth` → approve in the browser → paste the printed `YT_REFRESH_TOKEN`
    into `.env`.
 6. `npm run produce` → uploads today's video (private) to your channel. 🎉
+
+## Voiceover (Google Cloud TTS)
+
+Narration is optional — with no key, videos render silent. To enable it, in the
+**same** Google Cloud project:
+
+1. Enable **Cloud Text-to-Speech API**.
+2. **Credentials → Create credentials → API key**; restrict it to that API.
+3. Put it in `.env` as `GOOGLE_TTS_API_KEY` (and as a GitHub repo secret for the
+   daily workflow). Optional: `TTS_VOICE` (default `en-US-Neural2-F`), `TTS_RATE`.
+
+Clips are cached by content hash under `public/audio/` (gitignored), so re-renders
+make no new API calls. Free tier easily covers daily use (~27k chars/month vs 1M free).
+Use `--silent` (or `VOICE=off`) to skip narration for a run.
 
 ## Deploying the daily schedule
 
